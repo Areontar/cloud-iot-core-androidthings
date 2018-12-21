@@ -18,11 +18,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 
 /** TelemetryEvent unit tests. */
-@RunWith(RobolectricTestRunner.class)
 public class TelemetryEventTest {
 
     @Test

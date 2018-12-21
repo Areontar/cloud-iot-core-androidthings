@@ -18,15 +18,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 
-import java.security.KeyPair;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /** ConnectionParams unit tests. */
-@RunWith(RobolectricTestRunner.class)
 public class ConnectionParamsTest {
 
     private static final String PROJECT_ID = "project";
