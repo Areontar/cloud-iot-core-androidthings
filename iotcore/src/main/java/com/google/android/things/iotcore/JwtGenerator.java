@@ -14,19 +14,20 @@
 
 package com.google.android.things.iotcore;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
-
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.NumericDate;
 import org.jose4j.lang.JoseException;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.security.KeyPair;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+
+import javax.annotation.Nonnull;
 
 
 /**
@@ -49,9 +50,9 @@ class JwtGenerator {
      * @param tokenLifetime the amount of time generated JWTs should be valid
      */
     JwtGenerator(
-            @NonNull KeyPair keyPair,
-            @NonNull String jwtAudience,
-            @NonNull Duration tokenLifetime) {
+            @Nonnull KeyPair keyPair,
+            @Nonnull String jwtAudience,
+            @Nonnull Duration tokenLifetime) {
         this(keyPair, jwtAudience, tokenLifetime, Clock.systemUTC());
     }
 
@@ -63,10 +64,10 @@ class JwtGenerator {
 
     @VisibleForTesting()
     JwtGenerator(
-            @NonNull KeyPair keyPair,
-            @NonNull String jwtAudience,
-            @NonNull Duration tokenLifetime,
-            @NonNull Clock clock) {
+    		@Nonnull KeyPair keyPair,
+    		@Nonnull String jwtAudience,
+    		@Nonnull Duration tokenLifetime,
+    		@Nonnull Clock clock) {
         checkNotNull(keyPair, "keypair");
         checkNotNull(jwtAudience, "JWT audience");
         checkNotNull(tokenLifetime, "Token lifetime");

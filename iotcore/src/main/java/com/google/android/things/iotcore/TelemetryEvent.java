@@ -14,13 +14,15 @@
 
 package com.google.android.things.iotcore;
 
-import android.support.annotation.IntDef;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.text.TextUtils;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.apache.commons.lang3.StringUtils;
+
+import androidx.annotation.IntDef;
 
 /** Represents a telemetry event to publish to Cloud IoT Core. */
 public class TelemetryEvent {
@@ -48,13 +50,13 @@ public class TelemetryEvent {
      * @param topicSubpath the subpath under "../device/../events/"
      * @param qos the quality of service to use when sending the message
      */
-    public TelemetryEvent(@NonNull byte[] data, @Nullable String topicSubpath, @Qos int qos) {
+    public TelemetryEvent(@Nonnull byte[] data, @Nullable String topicSubpath, @Qos int qos) {
         if (qos != QOS_AT_MOST_ONCE && qos != QOS_AT_LEAST_ONCE) {
             throw new IllegalArgumentException("Invalid quality of service provided.");
         }
 
 
-        if (TextUtils.isEmpty(topicSubpath)) {
+        if (StringUtils.isEmpty(topicSubpath)) {
             topicSubpath = "";
         } else if (topicSubpath.charAt(0) != '/') {
             topicSubpath = "/" + topicSubpath;

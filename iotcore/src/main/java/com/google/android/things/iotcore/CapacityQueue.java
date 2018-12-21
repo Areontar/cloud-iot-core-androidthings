@@ -14,20 +14,23 @@
 
 package com.google.android.things.iotcore;
 
-import android.support.annotation.IntDef;
-import android.support.annotation.NonNull;
-import android.util.Log;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.AbstractQueue;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.logging.Logger;
+
+import javax.annotation.Nonnull;
+
+import androidx.annotation.IntDef;
 
 /** Queue implementation with limited capacity. */
 class CapacityQueue<E> extends AbstractQueue<E> {
     private static final String TAG = CapacityQueue.class.getSimpleName();
+    
+    private static final Logger Log = Logger.getLogger(TAG);
 
     /**
      * A CapacityQueue's drop policy determines how CapacityQueue handles attempts to enqueue new
@@ -78,7 +81,7 @@ class CapacityQueue<E> extends AbstractQueue<E> {
 
         // DROP_POLICY_HEAD
         if (mDeque.size() >= mMaxCapacity) {
-            Log.d(TAG, "Dropping from head");
+            Log.fine("Dropping from head");
             mDeque.removeFirst();
         }
         return mDeque.offerLast(e);
@@ -95,7 +98,7 @@ class CapacityQueue<E> extends AbstractQueue<E> {
     }
 
     @Override
-    @NonNull
+    @Nonnull
     public Iterator<E> iterator() {
         return mDeque.iterator();
     }

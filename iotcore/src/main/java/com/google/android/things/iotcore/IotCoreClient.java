@@ -14,13 +14,6 @@
 
 package com.google.android.things.iotcore;
 
-import android.os.Process;
-import android.support.annotation.GuardedBy;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
-import android.util.Log;
-
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -29,6 +22,8 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.jose4j.lang.JoseException;
+
+import com.google.common.annotations.VisibleForTesting;
 
 import java.io.EOFException;
 import java.net.SocketTimeoutException;
@@ -45,7 +40,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.GuardedBy;
 import javax.net.ssl.SSLException;
 
 /**
@@ -97,6 +97,7 @@ import javax.net.ssl.SSLException;
  */
 public class IotCoreClient {
     private static final String TAG = IotCoreClient.class.getSimpleName();
+    private static final Logger Log = Logger.getLogger(TAG);
 
     // Settings for exponential backoff behavior. These values are from Cloud IoT Core's
     // recommendations at
@@ -168,10 +169,10 @@ public class IotCoreClient {
      * IotCoreClient constructor used by the Builder.
      */
     private IotCoreClient(
-            @NonNull ConnectionParams connectionParams,
-            @NonNull KeyPair keyPair,
-            @NonNull MqttClient mqttClient,
-            @NonNull Queue<TelemetryEvent> telemetryQueue,
+            @Nonnull ConnectionParams connectionParams,
+            @Nonnull KeyPair keyPair,
+            @Nonnull MqttClient mqttClient,
+            @Nonnull Queue<TelemetryEvent> telemetryQueue,
             @Nullable Executor connectionCallbackExecutor,
             @Nullable ConnectionCallback connectionCallback,
             @Nullable Executor onConfigurationExecutor,
@@ -206,21 +207,21 @@ public class IotCoreClient {
 
     @VisibleForTesting
     IotCoreClient(
-            @NonNull ConnectionParams configuration,
-            @NonNull MqttClient mqttClient,
-            @NonNull JwtGenerator jwtGenerator,
-            @NonNull AtomicBoolean runBackgroundThread,
-            @NonNull AtomicReference<byte[]> unsentDeviceState,
-            @NonNull Queue<TelemetryEvent> telemetryQueue,
+    		@Nonnull ConnectionParams configuration,
+    		@Nonnull MqttClient mqttClient,
+    		@Nonnull JwtGenerator jwtGenerator,
+    		@Nonnull AtomicBoolean runBackgroundThread,
+    		@Nonnull AtomicReference<byte[]> unsentDeviceState,
+    		@Nonnull Queue<TelemetryEvent> telemetryQueue,
             @Nullable Executor connectionCallbackExecutor,
             @Nullable ConnectionCallback connectionCallback,
             @Nullable Executor onConfigurationExecutor,
             @Nullable OnConfigurationListener onConfigurationListener,
             @Nullable Executor onCommandExecutor,
             @Nullable OnCommandListener onCommandListener,
-            @NonNull Semaphore semaphore,
-            @NonNull BoundedExponentialBackoff backoff,
-            @NonNull AtomicBoolean clientConnectionState) {
+            @Nonnull Semaphore semaphore,
+            @Nonnull BoundedExponentialBackoff backoff,
+            @Nonnull AtomicBoolean clientConnectionState) {
         checkNotNull(configuration, "ConnectionParams");
         checkNotNull(mqttClient, "MqttClient");
         checkNotNull(jwtGenerator, "JwtGenerator");
@@ -288,7 +289,7 @@ public class IotCoreClient {
          * @return this builder
          */
         public Builder setConnectionParams(
-                @NonNull ConnectionParams connectionParams) {
+        		@Nonnull ConnectionParams connectionParams) {
             checkNotNull(connectionParams, "ConnectionParams");
             mConnectionParams = connectionParams;
             return this;
@@ -306,7 +307,7 @@ public class IotCoreClient {
          * @param keyPair the key pair used to register the device in this configuration
          * @return this builder
          */
-        public Builder setKeyPair(@NonNull KeyPair keyPair) {
+        public Builder setKeyPair(@Nonnull KeyPair keyPair) {
             checkNotNull(keyPair, "Key pair");
             mKeyPair = keyPair;
             return this;
@@ -335,7 +336,7 @@ public class IotCoreClient {
          * @return this builder
          */
         public Builder setTelemetryQueue(
-                @NonNull Queue<TelemetryEvent> telemetryQueue) {
+        		@Nonnull Queue<TelemetryEvent> telemetryQueue) {
             checkNotNull(telemetryQueue, "Telemetry queue");
             mTelemetryQueue = telemetryQueue;
             return this;
@@ -351,7 +352,7 @@ public class IotCoreClient {
          * @return this builder
          */
         public Builder setConnectionCallback(
-                @NonNull Executor executor, @NonNull ConnectionCallback callback) {
+        		@Nonnull Executor executor, @Nonnull ConnectionCallback callback) {
             checkNotNull(executor, "Connection callback executor");
             checkNotNull(callback, "Connection callback");
 
@@ -368,7 +369,7 @@ public class IotCoreClient {
          * @param callback the callback to add
          * @return this builder
          */
-        public Builder setConnectionCallback(@NonNull ConnectionCallback callback) {
+        public Builder setConnectionCallback(@Nonnull ConnectionCallback callback) {
             checkNotNull(callback, "Connection callback");
             mConnectionCallback = callback;
             return this;
@@ -389,7 +390,7 @@ public class IotCoreClient {
          * @return this builder
          */
         public Builder setOnConfigurationListener(
-                @NonNull Executor executor, @NonNull OnConfigurationListener listener) {
+        		@Nonnull Executor executor, @Nonnull OnConfigurationListener listener) {
             checkNotNull(executor, "Executor for OnConfigurationListener");
             checkNotNull(listener, "OnConfiguration listener");
 
@@ -412,7 +413,7 @@ public class IotCoreClient {
          * @return this builder
          */
         public Builder setOnConfigurationListener(
-                @NonNull OnConfigurationListener listener) {
+        		@Nonnull OnConfigurationListener listener) {
             checkNotNull(listener, "OnConfiguration listener");
             mOnConfigurationListener = listener;
             return this;
@@ -429,7 +430,7 @@ public class IotCoreClient {
          * @return this builder
          */
         public Builder setOnCommandListener(
-                @NonNull Executor executor, @NonNull OnCommandListener listener) {
+        		@Nonnull Executor executor, @Nonnull OnCommandListener listener) {
             checkNotNull(executor, "Executor for OnCommandListener");
             checkNotNull(listener, "OnCommand listener");
 
@@ -448,7 +449,7 @@ public class IotCoreClient {
          * @return this builder
          */
         public Builder setOnCommandListener(
-                @NonNull OnCommandListener listener) {
+        		@Nonnull OnCommandListener listener) {
             checkNotNull(listener, "OnCommand listener");
             mOnCommandListener = listener;
             return this;
@@ -581,7 +582,7 @@ public class IotCoreClient {
     private class BackgroundThread implements Runnable {
         @Override
         public void run() {
-            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+        	Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
 
             // Run as long as the thread is enabled.
             while (mRunBackgroundThread.get()) {
@@ -592,7 +593,7 @@ public class IotCoreClient {
             try {
                 mMqttClient.disconnectForcibly();
             } catch (MqttException mqttException) {
-                Log.e(TAG, "Error disconnecting from Cloud IoT Core", mqttException);
+                Log.log(Level.SEVERE, "Error disconnecting from Cloud IoT Core", mqttException);
             }
             onDisconnect(ConnectionCallback.REASON_CLIENT_CLOSED);
             mBackgroundThread = null;
@@ -601,7 +602,7 @@ public class IotCoreClient {
 
     @VisibleForTesting
     void reconnectLoop() {
-        Log.d(TAG, "in reconnect loop");
+        Log.fine("in reconnect loop");
         try {
             connectMqttClient();
 
@@ -617,13 +618,13 @@ public class IotCoreClient {
                 // Error isn't recoverable. I.e. the error has to do with the way the client is
                 // configured. Stop the thread to avoid spamming GCP.
                 mRunBackgroundThread.set(false);
-                Log.e(TAG, "Disconnected from Cloud IoT Core and cannot reconnect", mqttException);
+                Log.log(Level.SEVERE, "Disconnected from Cloud IoT Core and cannot reconnect", mqttException);
             }
             onDisconnect(getDisconnectionReason(mqttException));
         } catch (JoseException joseException) {
             // Error signing the JWT. Not a retryable error.
             mRunBackgroundThread.set(false);
-            Log.e(TAG, "Disconnected from Cloud IoT Core and cannot reconnect", joseException);
+            Log.log(Level.SEVERE, "Disconnected from Cloud IoT Core and cannot reconnect", joseException);
         }
     }
 
@@ -665,7 +666,7 @@ public class IotCoreClient {
                 // Send device state
                 publish(mConnectionParams.getDeviceStateTopic(), state,
                         QOS_FOR_DEVICE_STATE_MESSAGES);
-                Log.d(TAG, "Published state: " + new String(state));
+                Log.fine("Published state: " + new String(state));
 
                 // It's possible the device state changed while we were sending the original device
                 // state, so only clear the unsent device state if it didn't change.
@@ -695,14 +696,14 @@ public class IotCoreClient {
                 mConnectionParams.getTelemetryTopic() + mUnsentTelemetryEvent.getTopicSubpath(),
                 mUnsentTelemetryEvent.getData(),
                 mUnsentTelemetryEvent.getQos());
-        Log.d(TAG, "Published telemetry event: " + new String(mUnsentTelemetryEvent.getData()));
+        Log.fine("Published telemetry event: " + new String(mUnsentTelemetryEvent.getData()));
 
         // Event sent successfully. Clear the cached event.
         mUnsentTelemetryEvent = null;
     }
 
     // Publish data to topic.
-    private void publish(@NonNull String topic, byte[] data, int qos) throws MqttException {
+    private void publish(@Nonnull String topic, byte[] data, int qos) throws MqttException {
         try {
             mMqttClient.publish(topic, data, qos, false /* do not send as "retained" message */);
         } catch (MqttException mqttException) {
@@ -725,7 +726,7 @@ public class IotCoreClient {
 
             // Return success and don't try to resend the message that caused the exception. Log
             // the error so the user has some indication that something went wrong.
-            Log.w(TAG, "Error publishing message to " + topic, mqttException);
+            Log.log(Level.WARNING, "Error publishing message to " + topic, mqttException);
         }
     }
 
@@ -953,7 +954,7 @@ public class IotCoreClient {
      * @return Returns true if the event was queued to send, or return false if the event could
      * not be queued
      */
-    public boolean publishTelemetry(@NonNull TelemetryEvent event) {
+    public boolean publishTelemetry(@Nonnull TelemetryEvent event) {
         synchronized (mQueueLock) {
             int preOfferSize = mTelemetryQueue.size();
             if (!mTelemetryQueue.offer(event) || mTelemetryQueue.size() == preOfferSize) {

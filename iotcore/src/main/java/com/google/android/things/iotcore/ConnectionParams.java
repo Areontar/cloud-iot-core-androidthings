@@ -14,11 +14,12 @@
 
 package com.google.android.things.iotcore;
 
-import android.support.annotation.NonNull;
-import android.text.TextUtils;
-
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Nonnull;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Stores information necessary to connect a single device to Google Cloud IoT Core: the device's
@@ -100,8 +101,8 @@ public class ConnectionParams {
          * @param projectId the Google Cloud project ID for these connection parameters
          * @return this builder
          */
-        public Builder setProjectId(@NonNull String projectId) {
-            if (TextUtils.isEmpty(projectId)) {
+        public Builder setProjectId(@Nonnull String projectId) {
+            if (StringUtils.isEmpty(projectId)) {
                 throw new IllegalArgumentException("Project ID cannot be empty");
             }
             mProjectId = projectId;
@@ -117,11 +118,11 @@ public class ConnectionParams {
          * @param cloudRegion the registry's cloud region
          * @return this builder
          */
-        public Builder setRegistry(@NonNull String registryId, @NonNull String cloudRegion) {
-            if (TextUtils.isEmpty(registryId)) {
+        public Builder setRegistry(@Nonnull String registryId, @Nonnull String cloudRegion) {
+            if (StringUtils.isEmpty(registryId)) {
                 throw new IllegalArgumentException("Registry ID cannot be empty");
             }
-            if (TextUtils.isEmpty(cloudRegion)) {
+            if (StringUtils.isEmpty(cloudRegion)) {
                 throw new IllegalArgumentException("Cloud Region cannot be empty");
             }
 
@@ -138,8 +139,8 @@ public class ConnectionParams {
          * @param deviceId the Cloud IoT Core device ID to use for these connection parameters
          * @return this builder
          */
-        public Builder setDeviceId(@NonNull String deviceId) {
-            if (TextUtils.isEmpty(deviceId)) {
+        public Builder setDeviceId(@Nonnull String deviceId) {
+            if (StringUtils.isEmpty(deviceId)) {
                 throw new IllegalArgumentException("Device ID cannot be empty");
             }
             mDeviceId = deviceId;
@@ -155,8 +156,8 @@ public class ConnectionParams {
          * @param bridgeHostname the MQTT bridge hostname to use for these connection parameters
          * @return this builder
          */
-        public Builder setBridgeHostname(@NonNull String bridgeHostname) {
-            if (TextUtils.isEmpty(bridgeHostname)) {
+        public Builder setBridgeHostname(@Nonnull String bridgeHostname) {
+            if (StringUtils.isEmpty(bridgeHostname)) {
                 throw new IllegalArgumentException("Bridge hostname cannot be empty");
             }
             mBridgeHostname = bridgeHostname;
@@ -205,7 +206,7 @@ public class ConnectionParams {
          * @param unit the time units for the duration
          * @return this builder
          */
-        public Builder setAuthTokenLifetime(long duration, @NonNull TimeUnit unit) {
+        public Builder setAuthTokenLifetime(long duration, @Nonnull TimeUnit unit) {
             if (duration <= 0) {
                 throw new IllegalArgumentException("Auth token lifetime must be > 0");
             }
@@ -260,11 +261,11 @@ public class ConnectionParams {
      *         authorization credential
      */
     private ConnectionParams(
-            @NonNull String projectId,
-            @NonNull String registryId,
-            @NonNull String deviceId,
-            @NonNull String cloudRegion,
-            @NonNull String bridgeHostname,
+    		@Nonnull String projectId,
+    		@Nonnull String registryId,
+    		@Nonnull String deviceId,
+    		@Nonnull String cloudRegion,
+    		@Nonnull String bridgeHostname,
             int bridgePort,
             long authTokenLifetimeMillis) {
         mProjectId = projectId;
@@ -291,12 +292,12 @@ public class ConnectionParams {
     }
 
     private boolean isValid() {
-        return !TextUtils.isEmpty(mProjectId)
-                && !TextUtils.isEmpty(mRegistryId)
-                && !TextUtils.isEmpty(mCloudRegion)
-                && !TextUtils.isEmpty(mDeviceId)
-                && !TextUtils.isEmpty(mCloudRegion)
-                && !TextUtils.isEmpty(mBridgeHostname);
+        return !StringUtils.isEmpty(mProjectId)
+                && !StringUtils.isEmpty(mRegistryId)
+                && !StringUtils.isEmpty(mCloudRegion)
+                && !StringUtils.isEmpty(mDeviceId)
+                && !StringUtils.isEmpty(mCloudRegion)
+                && !StringUtils.isEmpty(mBridgeHostname);
     }
 
     /**

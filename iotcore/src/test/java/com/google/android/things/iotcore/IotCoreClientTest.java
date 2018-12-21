@@ -14,8 +14,6 @@
 
 package com.google.android.things.iotcore;
 
-import android.support.annotation.NonNull;
-
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -53,6 +51,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.annotation.Nonnull;
 import javax.net.ssl.SSLException;
 
 /** IotCoreClient unit tests. */
@@ -196,7 +195,7 @@ public class IotCoreClientTest {
 
     private class SerialExecutor implements Executor {
         @Override
-        public void execute(@NonNull Runnable r) {
+        public void execute(@Nonnull Runnable r) {
             r.run();
         }
     }

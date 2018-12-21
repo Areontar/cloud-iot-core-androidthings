@@ -13,10 +13,10 @@
 // limitations under the License.
 package com.google.android.things.iotcore;
 
-import android.support.annotation.IntDef;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+
+import androidx.annotation.IntDef;
 
 /**
  * Callback interface to receive information about the status of the Cloud IoT Core connection.
