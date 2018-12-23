@@ -40,6 +40,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import com.google.android.things.iotcore.TelemetryEvent.QOSPolicy;
+
 import java.io.EOFException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -60,7 +62,7 @@ public class IotCoreClientTest {
     private static final String TOPIC = "topic";
     private static final String COMMAND = "command";
     private static final byte[] DATA = "Hello world".getBytes();
-    private static final int QOS = TelemetryEvent.QOS_AT_LEAST_ONCE;
+    private static final QOSPolicy QOS = TelemetryEvent.QOSPolicy.QOS_AT_LEAST_ONCE;
 
     private final ConnectionParams mMockConnectionParams = mock(ConnectionParams.class);
     private final MqttClient mMockMqttClient = mock(MqttClient.class);
@@ -112,6 +114,7 @@ public class IotCoreClientTest {
                 mMockOnConfigurationListener,
                 mMockOnCommandExecutor,
                 mMockOnCommandListener,
+                null,
                 mMockSemaphore,
                 mMockBackoff,
                 mClientConnectionStateSpy);
@@ -160,6 +163,7 @@ public class IotCoreClientTest {
                 mMockOnConfigurationListener,
                 serialExecutor,
                 mMockOnCommandListener,
+                null,
                 mMockSemaphore,
                 mMockBackoff,
                 mClientConnectionStateSpy);
@@ -360,7 +364,7 @@ public class IotCoreClientTest {
         mClientConnectionStateSpy.set(true);
         mClientMqttCallback.connectionLost(mockMqttException);
 
-        verify(mMockConnectionCallback).onDisconnected(ConnectionCallback.REASON_CONNECTION_LOST);
+        verify(mMockConnectionCallback).onDisconnected(ConnectionCallback.DisconnectReason.REASON_CONNECTION_LOST);
     }
 
     @Test
@@ -387,7 +391,7 @@ public class IotCoreClientTest {
         mClientConnectionStateSpy.set(true);
         mClientMqttCallback.connectionLost(mockMqttException);
 
-        verify(mMockConnectionCallback).onDisconnected(ConnectionCallback.REASON_CLIENT_CLOSED);
+        verify(mMockConnectionCallback).onDisconnected(ConnectionCallback.DisconnectReason.REASON_CLIENT_CLOSED);
     }
 
     @Test
@@ -410,7 +414,7 @@ public class IotCoreClientTest {
         mClientConnectionStateSpy.set(true);
         mClientMqttCallback.connectionLost(mockThrowable);
 
-        verify(mMockConnectionCallback).onDisconnected(ConnectionCallback.REASON_UNKNOWN);
+        verify(mMockConnectionCallback).onDisconnected(ConnectionCallback.DisconnectReason.REASON_UNKNOWN);
     }
 
     @Test
@@ -431,7 +435,7 @@ public class IotCoreClientTest {
 
         mTestIotCoreClient.reconnectLoop();
 
-        verify(mMockMqttClient).publish(eq(TOPIC + TOPIC), eq(DATA), eq(QOS), any(Boolean.class));
+        verify(mMockMqttClient).publish(eq(TOPIC + TOPIC), eq(DATA), eq(QOS.getid()), any(Boolean.class));
     }
 
     @Test
@@ -450,17 +454,17 @@ public class IotCoreClientTest {
         // First execution gets exception
         doThrow(new MqttException(MqttException.REASON_CODE_CLIENT_NOT_CONNECTED))
                 .when(mMockMqttClient)
-                .publish(eq(TOPIC + TOPIC), eq(DATA), eq(QOS), any(Boolean.class));
+                .publish(eq(TOPIC + TOPIC), eq(DATA), eq(QOS.getid()), any(Boolean.class));
         mTestIotCoreClient.reconnectLoop();
 
         // Second execution succeeds
         doNothing()
                 .when(mMockMqttClient)
-                .publish(eq(TOPIC + TOPIC), eq(DATA), eq(QOS), any(Boolean.class));
+                .publish(eq(TOPIC + TOPIC), eq(DATA), eq(QOS.getid()), any(Boolean.class));
         mTestIotCoreClient.reconnectLoop();
 
         verify(mMockMqttClient, times(2))
-                .publish(eq(TOPIC + TOPIC), eq(DATA), eq(QOS), any(Boolean.class));
+                .publish(eq(TOPIC + TOPIC), eq(DATA), eq(QOS.getid()), any(Boolean.class));
         verify(mMockBackoff).nextBackoff();
     }
 
@@ -562,7 +566,7 @@ public class IotCoreClientTest {
     public void testNoBackoffOnUnrecoverableError() throws MqttException {
         doThrow(new MqttException(MqttException.REASON_CODE_FAILED_AUTHENTICATION))
                 .when(mMockMqttClient)
-                .publish(eq(TOPIC + TOPIC), eq(DATA), eq(QOS), any(Boolean.class));
+                .publish(eq(TOPIC + TOPIC), eq(DATA), eq(QOS.getid()), any(Boolean.class));
 
         mTestIotCoreClient.reconnectLoop();
 
@@ -578,7 +582,7 @@ public class IotCoreClientTest {
 
         mTestIotCoreClient.reconnectLoop();
 
-        verify(mMockConnectionCallback).onDisconnected(ConnectionCallback.REASON_NOT_AUTHORIZED);
+        verify(mMockConnectionCallback).onDisconnected(ConnectionCallback.DisconnectReason.REASON_NOT_AUTHORIZED);
     }
 
     @Test
@@ -589,7 +593,7 @@ public class IotCoreClientTest {
                 .setDeviceId("device")
                 .build();
         TelemetryEvent telemetryMessage =
-                new TelemetryEvent(new byte[1], "abc", TelemetryEvent.QOS_AT_LEAST_ONCE);
+                new TelemetryEvent(new byte[1], "abc", TelemetryEvent.QOSPolicy.QOS_AT_LEAST_ONCE);
 
         assertThat(connectionParams.getTelemetryTopic() + telemetryMessage.getTopicSubpath())
                 .isEqualTo("/devices/device/events/abc");

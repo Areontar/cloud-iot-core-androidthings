@@ -23,6 +23,8 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.jose4j.lang.JoseException;
 
+import com.google.android.things.iotcore.ConnectionCallback.DisconnectReason;
+import com.google.android.things.iotcore.TelemetryEvent.QOSPolicy;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.io.EOFException;
@@ -157,6 +159,8 @@ public class IotCoreClient {
 
     // Will be used to strip off the commands topic prefix
     private final String mCommandsTopicPrefixRegex;
+	
+    private  MqttConnectOptions mMqttConnectOptions;
 
     // Throw an IllegalArgumentException if ref is null.
     private static void checkNotNull(Object ref, String name) {
@@ -178,7 +182,8 @@ public class IotCoreClient {
             @Nullable Executor onConfigurationExecutor,
             @Nullable OnConfigurationListener onConfigurationListener,
             @Nullable Executor onCommandExecutor,
-            @Nullable OnCommandListener onCommandListener) {
+            @Nullable OnCommandListener onCommandListener,
+            @Nullable MqttConnectOptions mqttConnectoptions) {
         this(
                 connectionParams,
                 mqttClient,
@@ -195,6 +200,7 @@ public class IotCoreClient {
                 onConfigurationListener,
                 onCommandExecutor,
                 onCommandListener,
+                mqttConnectoptions,
                 new Semaphore(0),
                 new BoundedExponentialBackoff(
                         INITIAL_RETRY_INTERVAL_MS,
@@ -219,6 +225,7 @@ public class IotCoreClient {
             @Nullable OnConfigurationListener onConfigurationListener,
             @Nullable Executor onCommandExecutor,
             @Nullable OnCommandListener onCommandListener,
+            @Nullable MqttConnectOptions mqttConnectOptions,
             @Nonnull Semaphore semaphore,
             @Nonnull BoundedExponentialBackoff backoff,
             @Nonnull AtomicBoolean clientConnectionState) {
@@ -254,7 +261,7 @@ public class IotCoreClient {
         mBackoff = backoff;
         mClientConnectionState = clientConnectionState;
         mCommandsTopicPrefixRegex = String.format(Locale.US, "^%s/?", mConnectionParams.getCommandsTopic());
-
+        mMqttConnectOptions = mqttConnectOptions;
         mMqttClient.setCallback(
                 createMqttCallback(onConfigurationExecutor, onConfigurationListener, onCommandExecutor, onCommandListener));
 
@@ -277,6 +284,7 @@ public class IotCoreClient {
         private OnConfigurationListener mOnConfigurationListener;
         private Executor mOnCommandExecutor;
         private OnCommandListener mOnCommandListener;
+        private MqttConnectOptions mMqttConnectOptions;
         private Executor mConnectionCallbackExecutor;
         private ConnectionCallback mConnectionCallback;
 
@@ -454,6 +462,12 @@ public class IotCoreClient {
             mOnCommandListener = listener;
             return this;
         }
+        
+        public Builder setMqttOption(@Nonnull MqttConnectOptions mqttOption) {
+            checkNotNull(mqttOption, "OnCommand listener");
+            mMqttConnectOptions = mqttOption;
+        	return this;
+        }
 
         /**
          * Construct a new IotCoreClient with the Builder's parameters.
@@ -466,7 +480,7 @@ public class IotCoreClient {
             checkNotNull(mKeyPair, "KeyPair");
             if (mTelemetryQueue == null) {
                 mTelemetryQueue =
-                        new CapacityQueue<>(DEFAULT_QUEUE_CAPACITY, CapacityQueue.DROP_POLICY_HEAD);
+                        new CapacityQueue<>(DEFAULT_QUEUE_CAPACITY, CapacityQueue.DropPolicy.DROP_POLICY_HEAD);
             }
             if (mOnConfigurationListener != null && mOnConfigurationExecutor == null) {
                 mOnConfigurationExecutor = createDefaultExecutor();
@@ -515,7 +529,8 @@ public class IotCoreClient {
                     mOnConfigurationExecutor,
                     mOnConfigurationListener,
                     mOnCommandExecutor,
-                    mOnCommandListener);
+                    mOnCommandListener, 
+                    mMqttConnectOptions);
         }
     }
 
@@ -535,7 +550,7 @@ public class IotCoreClient {
                 // Core.
                 mSemaphore.release();
 
-                int reason = ConnectionCallback.REASON_UNKNOWN;
+                DisconnectReason reason = ConnectionCallback.DisconnectReason.REASON_UNKNOWN;
                 if (cause instanceof MqttException) {
                     reason = getDisconnectionReason((MqttException) cause);
                 }
@@ -595,7 +610,7 @@ public class IotCoreClient {
             } catch (MqttException mqttException) {
                 Log.log(Level.SEVERE, "Error disconnecting from Cloud IoT Core", mqttException);
             }
-            onDisconnect(ConnectionCallback.REASON_CLIENT_CLOSED);
+            onDisconnect(ConnectionCallback.DisconnectReason.REASON_CLIENT_CLOSED);
             mBackgroundThread = null;
         }
     }
@@ -695,7 +710,7 @@ public class IotCoreClient {
         publish(
                 mConnectionParams.getTelemetryTopic() + mUnsentTelemetryEvent.getTopicSubpath(),
                 mUnsentTelemetryEvent.getData(),
-                mUnsentTelemetryEvent.getQos());
+                mUnsentTelemetryEvent.getQos().getid());
         Log.fine("Published telemetry event: " + new String(mUnsentTelemetryEvent.getData()));
 
         // Event sent successfully. Clear the cached event.
@@ -771,14 +786,14 @@ public class IotCoreClient {
     /**
      * Determine appropriate error to return to client based on MqttException.
      */
-    private @ConnectionCallback.DisconnectReason int getDisconnectionReason(
+    private ConnectionCallback.DisconnectReason getDisconnectionReason(
             MqttException mqttException) {
         switch (mqttException.getReasonCode()) {
             case MqttException.REASON_CODE_FAILED_AUTHENTICATION:
             case MqttException.REASON_CODE_NOT_AUTHORIZED:
                 // These cases happen if the client uses an invalid IoT Core registry ID, invalid
                 // Iot Core device ID, invalid GCP cloud region, or unregistered signing key.
-                return ConnectionCallback.REASON_NOT_AUTHORIZED;
+                return ConnectionCallback.DisconnectReason.REASON_NOT_AUTHORIZED;
             case MqttException.REASON_CODE_CONNECTION_LOST:
                 if (mqttException.getCause() instanceof EOFException) {
                     // This case happens when Paho or Cloud IoT Core closes the connection.
@@ -787,38 +802,38 @@ public class IotCoreClient {
                         // connection. For example, this could happen if the client used an invalid
                         // GCP project ID, the client exceeds a rate limit set by Cloud IoT Core, or
                         // if the MQTT broker address is invalid.
-                        return ConnectionCallback.REASON_CONNECTION_LOST;
+                        return ConnectionCallback.DisconnectReason.REASON_CONNECTION_LOST;
                     } else {
                         // If mRunBackgroundThread is false, then the client closed the connection.
-                        return ConnectionCallback.REASON_CLIENT_CLOSED;
+                        return ConnectionCallback.DisconnectReason.REASON_CLIENT_CLOSED;
                     }
                 }
 
                 if (mqttException.getCause() instanceof SSLException) {
                     // This case happens when something goes wrong in the network that ends an
                     // existing connection to Cloud IoT Core (e.g. the wifi driver resets).
-                    return ConnectionCallback.REASON_CONNECTION_LOST;
+                    return ConnectionCallback.DisconnectReason.REASON_CONNECTION_LOST;
                 }
-                return ConnectionCallback.REASON_UNKNOWN;
+                return ConnectionCallback.DisconnectReason.REASON_UNKNOWN;
             case MqttException.REASON_CODE_CLIENT_EXCEPTION:
                 // Paho uses this reason code for several distinct error cases
                 if (mqttException.getCause() instanceof SocketTimeoutException) {
                     // This case could happen if the MQTT bridge port number is wrong or of there
                     // is some other error with the MQTT bridge that keeps it from responding.
-                    return ConnectionCallback.REASON_CONNECTION_TIMEOUT;
+                    return ConnectionCallback.DisconnectReason.REASON_CONNECTION_TIMEOUT;
                 }
                 if (mqttException.getCause() instanceof UnknownHostException) {
                     // This case happens if the client is disconnected from the internet or if they
                     // use an invalid hostname for the MQTT bridge. Unfortunately, Paho doesn't
                     // provide a way to get more information.
-                    return ConnectionCallback.REASON_CONNECTION_LOST;
+                    return ConnectionCallback.DisconnectReason.REASON_CONNECTION_LOST;
                 }
-                return ConnectionCallback.REASON_UNKNOWN;
+                return ConnectionCallback.DisconnectReason.REASON_UNKNOWN;
             case MqttException.REASON_CODE_CLIENT_TIMEOUT:
             case MqttException.REASON_CODE_WRITE_TIMEOUT:
-                return ConnectionCallback.REASON_CONNECTION_TIMEOUT;
+                return ConnectionCallback.DisconnectReason.REASON_CONNECTION_TIMEOUT;
             default:
-                return ConnectionCallback.REASON_UNKNOWN;
+                return ConnectionCallback.DisconnectReason.REASON_UNKNOWN;
         }
     }
 
@@ -836,22 +851,24 @@ public class IotCoreClient {
     }
 
     private MqttConnectOptions configureConnectionOptions() throws JoseException {
-        MqttConnectOptions options = new MqttConnectOptions();
+    	if(mMqttConnectOptions == null) {
+    		mMqttConnectOptions = new MqttConnectOptions();
+    	}
 
         // Note that the Cloud IoT only supports MQTT 3.1.1, and Paho requires that we
         // explicitly set this. If you don't set MQTT version, the server will immediately close its
         // connection to your device.
-        options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
+    	mMqttConnectOptions.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
 
         // Cloud IoT Core ignores the user name field, but Paho requires a user name in order
         // to send the password field. We set the user name because we need the password to send a
         // JWT to authorize the device.
-        options.setUserName("unused");
+    	mMqttConnectOptions.setUserName("unused");
 
         // generate the jwt password
-        options.setPassword(mJwtGenerator.createJwt().toCharArray());
+    	mMqttConnectOptions.setPassword(mJwtGenerator.createJwt().toCharArray());
 
-        return options;
+        return mMqttConnectOptions;
     }
 
     // Call client's connection callbacks
@@ -872,7 +889,7 @@ public class IotCoreClient {
     }
 
     // Call client's connection callbacks
-    private void onDisconnect(@ConnectionCallback.DisconnectReason final int reason) {
+    private void onDisconnect(DisconnectReason reason) {
         if (mConnectionCallback == null) {
             return;
         }
@@ -881,7 +898,7 @@ public class IotCoreClient {
                 new Runnable() {
                     @Override
                     public void run() {
-                        if (reason == ConnectionCallback.REASON_NOT_AUTHORIZED) {
+                        if (reason == ConnectionCallback.DisconnectReason.REASON_NOT_AUTHORIZED) {
                             // Always notify on NOT_AUTHORIZED errors since they mean the client is
                             // misconfigured and needs to do something to fix the problem.
                             mClientConnectionState.set(false);

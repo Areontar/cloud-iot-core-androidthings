@@ -13,41 +13,24 @@
 // limitations under the License.
 package com.google.android.things.iotcore;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
-import androidx.annotation.IntDef;
-
 /**
  * Callback interface to receive information about the status of the Cloud IoT Core connection.
  */
 public abstract class ConnectionCallback {
 
     /** Disconnect reason codes. */
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({
+    public enum DisconnectReason{
+        	/** Could not determine the source of the error. */
             REASON_UNKNOWN,
+            /** The parameters used to connect to Cloud IoT Core were invalid. */
             REASON_NOT_AUTHORIZED,
+            /** The device lost connection to Cloud IoT Core. */
             REASON_CONNECTION_LOST,
+            /** Timeout occurred while connecting to the MQTT bridge. */
             REASON_CONNECTION_TIMEOUT,
+            /** The client closed the connection. */
             REASON_CLIENT_CLOSED,
-    })
-    public @interface DisconnectReason {}
-
-    /** Could not determine the source of the error. */
-    public static final int REASON_UNKNOWN = 0;
-
-    /** The parameters used to connect to Cloud IoT Core were invalid. */
-    public static final int REASON_NOT_AUTHORIZED = 1;
-
-    /** The device lost connection to Cloud IoT Core. */
-    public static final int REASON_CONNECTION_LOST = 2;
-
-    /** Timeout occurred while connecting to the MQTT bridge. */
-    public static final int REASON_CONNECTION_TIMEOUT = 3;
-
-    /** The client closed the connection. */
-    public static final int REASON_CLIENT_CLOSED = 4;
+    }
 
     /** Invoked when the Cloud IoT Core connection is established. */
     public abstract void onConnected();
@@ -57,5 +40,5 @@ public abstract class ConnectionCallback {
      *
      * @param reason the reason the connection was lost
      */
-    public abstract void onDisconnected(@DisconnectReason int reason);
+    public abstract void onDisconnected(DisconnectReason reason);
 }

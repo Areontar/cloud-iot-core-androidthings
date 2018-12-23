@@ -18,13 +18,15 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
 
+import com.google.android.things.iotcore.CapacityQueue.DropPolicy;
+
 import java.util.Iterator;
 
 /** CapacityQueue unit tests. */
 public class CapacityQueueTest {
 
     private static final int DEFAULT_CAPACITY = 10;
-    private static final int DEFAULT_DROP_POLICY = CapacityQueue.DROP_POLICY_HEAD;
+    private static final DropPolicy DEFAULT_DROP_POLICY = CapacityQueue.DropPolicy.DROP_POLICY_HEAD;
 
     @Test
     public void testSizeEmptyQueue() {
@@ -58,7 +60,7 @@ public class CapacityQueueTest {
     @Test
     public void testOfferToCapacityHeadDrop() {
         CapacityQueue<Integer> queue = new CapacityQueue<>(
-                DEFAULT_CAPACITY, CapacityQueue.DROP_POLICY_HEAD);
+                DEFAULT_CAPACITY, CapacityQueue.DropPolicy.DROP_POLICY_HEAD);
         for (int i = 0; i < DEFAULT_CAPACITY; i++) {
             assertThat(queue.offer(i)).isTrue();
         }
@@ -67,7 +69,7 @@ public class CapacityQueueTest {
     @Test
     public void testOfferAtCapacityHeadDrop() {
         CapacityQueue<Integer> queue = new CapacityQueue<>(
-                DEFAULT_CAPACITY, CapacityQueue.DROP_POLICY_HEAD);
+                DEFAULT_CAPACITY, CapacityQueue.DropPolicy.DROP_POLICY_HEAD);
         for (int i = 0; i < DEFAULT_CAPACITY; i++) {
             queue.offer(i);
         }
@@ -82,7 +84,7 @@ public class CapacityQueueTest {
     @Test
     public void testOfferTailDropToCapacity() {
         CapacityQueue<Integer> queue = new CapacityQueue<>(
-                DEFAULT_CAPACITY, CapacityQueue.DROP_POLICY_TAIL);
+                DEFAULT_CAPACITY, CapacityQueue.DropPolicy.DROP_POLICY_TAIL);
         for (int i = 0; i < DEFAULT_CAPACITY; i++) {
             assertThat(queue.offer(i)).isTrue();
         }
@@ -91,7 +93,7 @@ public class CapacityQueueTest {
     @Test
     public void testOfferTailDropAtCapacity() {
         CapacityQueue<Integer> queue = new CapacityQueue<>(
-                DEFAULT_CAPACITY, CapacityQueue.DROP_POLICY_TAIL);
+                DEFAULT_CAPACITY, CapacityQueue.DropPolicy.DROP_POLICY_TAIL);
         for (int i = 0; i < DEFAULT_CAPACITY; i++) {
             queue.offer(i);
         }

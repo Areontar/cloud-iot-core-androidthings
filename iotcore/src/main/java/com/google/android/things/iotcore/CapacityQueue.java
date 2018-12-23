@@ -14,8 +14,6 @@
 
 package com.google.android.things.iotcore;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.AbstractQueue;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -23,8 +21,6 @@ import java.util.Iterator;
 import java.util.logging.Logger;
 
 import javax.annotation.Nonnull;
-
-import androidx.annotation.IntDef;
 
 /** Queue implementation with limited capacity. */
 class CapacityQueue<E> extends AbstractQueue<E> {
@@ -43,22 +39,20 @@ class CapacityQueue<E> extends AbstractQueue<E> {
      * oldest element, the element at the head of the queue, is discarded and the new element is
      * added to the back of the queue.
      */
-    static final int DROP_POLICY_HEAD = 0;
-    static final int DROP_POLICY_TAIL = 1;
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({DROP_POLICY_HEAD, DROP_POLICY_TAIL})
-    @interface DropPolicy {}
+    public enum DropPolicy{
+    	DROP_POLICY_HEAD, 
+    	DROP_POLICY_TAIL
+    };
 
     private final Deque<E> mDeque;
     private final int mMaxCapacity;
-    private final @DropPolicy int mDropPolicy;
+    private final DropPolicy mDropPolicy;
 
-    CapacityQueue(int maxCapacity, @DropPolicy int dropPolicy) {
+    CapacityQueue(int maxCapacity, DropPolicy dropPolicy) {
         if (maxCapacity <= 0) {
             throw new IllegalArgumentException("Queue capacity must be greater than 0");
         }
-        if (dropPolicy != DROP_POLICY_HEAD && dropPolicy != DROP_POLICY_TAIL) {
+        if (!dropPolicy.equals(DropPolicy.DROP_POLICY_HEAD) && !dropPolicy.equals(DropPolicy.DROP_POLICY_TAIL)) {
             throw new IllegalArgumentException(
                     "Queue drop policy must be DROP_POLICY_HEAD or DROP_POLICY_TAIL");
         }
@@ -75,7 +69,7 @@ class CapacityQueue<E> extends AbstractQueue<E> {
 
     @Override
     public boolean offer(E e) {
-        if (mDropPolicy == DROP_POLICY_TAIL) {
+        if (mDropPolicy.equals(DropPolicy.DROP_POLICY_TAIL)) {
             return mDeque.size() < mMaxCapacity && mDeque.offerLast(e);
         }
 

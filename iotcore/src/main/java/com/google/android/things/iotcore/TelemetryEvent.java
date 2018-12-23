@@ -14,33 +14,43 @@
 
 package com.google.android.things.iotcore;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import org.apache.commons.lang3.StringUtils;
-
-import androidx.annotation.IntDef;
 
 /** Represents a telemetry event to publish to Cloud IoT Core. */
 public class TelemetryEvent {
 
     private final String mTopicSubpath;
     private final byte[] mData;
-    private final @Qos int mQos;
+    private final QOSPolicy mQos;
 
     /** Quality of service options. */
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({QOS_AT_MOST_ONCE, QOS_AT_LEAST_ONCE})
-    public @interface Qos {}
+    public enum QOSPolicy{
+        /** At most once delivery. */
+    	QOS_AT_MOST_ONCE
+    	{
+			@Override
+			public int getid() {
+				
+				return 0;
+			}
+		},
+    	/** At least once delivery. */
+    	QOS_AT_LEAST_ONCE
+    	
+    	{
+			@Override
+			public int getid() {
+				// TODO Auto-generated method stub
+				return 1;
+			}
+    	};    
+		public abstract int getid();
+		};
 
-    /** At most once delivery. */
-    public static final int QOS_AT_MOST_ONCE = 0;
 
-    /** At least once delivery. */
-    public static final int QOS_AT_LEAST_ONCE = 1;
 
     /**
      * Constructs a new TelemetryEvent with the data to publish and an
@@ -50,8 +60,8 @@ public class TelemetryEvent {
      * @param topicSubpath the subpath under "../device/../events/"
      * @param qos the quality of service to use when sending the message
      */
-    public TelemetryEvent(@Nonnull byte[] data, @Nullable String topicSubpath, @Qos int qos) {
-        if (qos != QOS_AT_MOST_ONCE && qos != QOS_AT_LEAST_ONCE) {
+    public TelemetryEvent(@Nonnull byte[] data, @Nullable String topicSubpath, QOSPolicy qos) {
+        if (!qos.equals(QOSPolicy.QOS_AT_MOST_ONCE) && !qos.equals(QOSPolicy.QOS_AT_LEAST_ONCE)) {
             throw new IllegalArgumentException("Invalid quality of service provided.");
         }
 
@@ -92,7 +102,7 @@ public class TelemetryEvent {
      *
      * @return this event's QOS settings
      */
-    public @Qos int getQos() {
+    public QOSPolicy getQos() {
         return mQos;
     }
 }
