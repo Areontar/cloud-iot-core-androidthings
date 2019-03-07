@@ -92,6 +92,7 @@ public class ConnectionParams {
         private String mBridgeHostname = DEFAULT_BRIDGE_HOSTNAME;
         private int mBridgePort = DEFAULT_BRIDGE_PORT;
         private long mAuthTokenLifetimeMillis = DEFAULT_AUTH_TOKEN_LIFETIME_MILLIS;
+        private boolean useWebproxy = false;
 
         /**
          * Set the Google Cloud project ID.
@@ -223,6 +224,11 @@ public class ConnectionParams {
             return this;
         }
 
+        public Builder useWebproxy(boolean useWebproxy) {
+            this.useWebproxy = useWebproxy;
+            return this;
+        }
+
         /**
          * Construct a new ConnectionParams instance with the parameters given to this Builder.
          *
@@ -238,7 +244,8 @@ public class ConnectionParams {
                             mCloudRegion,
                             mBridgeHostname,
                             mBridgePort,
-                            mAuthTokenLifetimeMillis);
+                            mAuthTokenLifetimeMillis,
+                            useWebproxy);
 
             if (!connectionParams.isValid()) {
                 throw new IllegalStateException("Invalid ConnectionParams parameters.");
@@ -267,7 +274,8 @@ public class ConnectionParams {
     		@Nonnull String cloudRegion,
     		@Nonnull String bridgeHostname,
             int bridgePort,
-            long authTokenLifetimeMillis) {
+            long authTokenLifetimeMillis,
+            boolean useWebproxy) {
         mProjectId = projectId;
         mRegistryId = registryId;
         mDeviceId = deviceId;
@@ -276,7 +284,8 @@ public class ConnectionParams {
         mBridgePort = bridgePort;
         mAuthTokenLifetimeMillis = authTokenLifetimeMillis;
 
-        mBrokerUrl = "ssl://" + mBridgeHostname + ":" + mBridgePort;
+        String scheme = !useWebproxy ? "ssl://" : "wp://";
+        mBrokerUrl = scheme + mBridgeHostname + ":" + mBridgePort;
         mClientId = "projects/"
                 + mProjectId
                 + "/locations/"

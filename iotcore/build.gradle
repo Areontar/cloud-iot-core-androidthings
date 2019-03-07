@@ -9,6 +9,7 @@ plugins {
 repositories {
     jcenter()
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -20,7 +21,10 @@ dependencies {
 	implementation 'org.apache.commons:commons-lang3:3.8.1'
 
     // MQTT
-    implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.0'
+    //implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.0'
+    //replace . with ~ in project name so that Jitpack finds the artifact
+    implementation 'com.github.Areontar.paho~mqtt~java:org.eclipse.paho.client.mqttv3:ddd3aa87d6'
+    //implementation 'com.github.Areontar.paho.mqtt.java:java-parent:ddd3aa87d6'
 
     // JWT
     implementation 'org.bitbucket.b_c:jose4j:0.6.3'
